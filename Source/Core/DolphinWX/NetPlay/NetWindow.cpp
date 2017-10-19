@@ -245,7 +245,7 @@ wxSizer* NetPlayDialog::CreateBottomGUI(wxWindow* parent)
 
 	wxBoxSizer* const bottom_szr = new wxBoxSizer(wxHORIZONTAL);
 
-	wxStaticText* buffer_lbl = new wxStaticText(parent, wxID_ANY, _("Buffer:"));
+	wxStaticText* buffer_lbl = new wxStaticText(parent, wxID_ANY, _("Total Local Buffer:"));
 	m_player_padbuf_spin =
 		new wxSpinCtrl(parent, wxID_ANY, std::to_string(INITIAL_PAD_BUFFER_SIZE), wxDefaultPosition,
 			wxDefaultSize, wxSP_ARROW_KEYS, 0, 200, INITIAL_PAD_BUFFER_SIZE);
