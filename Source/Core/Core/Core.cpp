@@ -35,9 +35,7 @@
 #include "Core/DSPEmulator.h"
 #include "Core/Host.h"
 #include "Core/MemTools.h"
-#ifdef USE_MEMORYWATCHER
 #include "Core/MemoryWatcher.h"
-#endif
 #include "Core/Boot/Boot.h"
 #include "Core/FifoPlayer/FifoPlayer.h"
 #include "Core/HLE/HLE.h"
@@ -303,9 +301,7 @@ void Stop()  // - Hammertime!
 	GCAdapter::ResetRumble();
 #endif
 
-#ifdef USE_MEMORYWATCHER
 	MemoryWatcher::Shutdown();
-#endif
 }
 
 void DeclareAsCPUThread()
@@ -397,9 +393,7 @@ static void CpuThread()
 		}
 #endif
 
-#ifdef USE_MEMORYWATCHER
 	MemoryWatcher::Init();
-#endif
 
 	// Enter CPU run loop. When we leave it - we are done.
 	CPU::Run();
