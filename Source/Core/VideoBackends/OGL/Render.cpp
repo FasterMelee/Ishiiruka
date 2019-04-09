@@ -1254,6 +1254,18 @@ void Renderer::BlitScreen(const TargetRectangle& dst_rect, const TargetRectangle
 	}
 }
 
+void Renderer::InsertBlackFrame()
+{
+  ResetAPIState();
+  GLInterface->Swap();
+  // Clear framebuffer
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  FramebufferManager::SetFramebuffer(0);
+  RestoreAPIState();
+}
+
 void Renderer::ReinterpretPixelData(unsigned int convtype)
 {
 	if (convtype == 0 || convtype == 2)

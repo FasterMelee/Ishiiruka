@@ -60,6 +60,8 @@ public:
 	static D3D12_BLEND_DESC GetResetBlendDesc();
 	static D3D12_DEPTH_STENCIL_DESC GetResetDepthStencilDesc();
 	static D3D12_RASTERIZER_DESC GetResetRasterizerDesc();
+
+	void InsertBlackFrame() override;
 private:
 	// Draw either the EFB, or specified XFB sources to the currently-bound framebuffer.
 	void DrawFrame(const TargetRectangle& target_rc, const EFBRectangle& source_rc, u32 xfb_addr,

@@ -98,6 +98,8 @@ struct VideoConfig final
 	bool bUseXFB;
 	bool bUseRealXFB;
 
+	bool bBlackFrameInsertion;
+
 	// OpenCL/OpenMP
 	bool bEnableOpenCL;
 	bool bOMPDecoder;

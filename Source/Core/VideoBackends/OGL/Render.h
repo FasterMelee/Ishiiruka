@@ -111,6 +111,8 @@ public:
 
 	void ChangeSurface(void* new_surface_handle) override;
 
+	void InsertBlackFrame() override;
+
 private:
 	struct ViewPort {
 		float       X;

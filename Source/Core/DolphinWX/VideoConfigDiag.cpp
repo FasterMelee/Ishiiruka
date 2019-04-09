@@ -108,6 +108,7 @@ static wxString prog_scan_desc = _("Enables progressive scan if supported by the
 static wxString ar_desc = _("Select what aspect ratio to use when rendering:\nAuto: Use the native aspect ratio\nForce 16:9: Mimic an analog TV with a widescreen aspect ratio.\nForce 4:3: Mimic a standard 4:3 analog TV.\nStretch to Window: Stretch the picture to the window size.\n\nIf unsure, select Auto.");
 static wxString ws_hack_desc = _("Force the game to output graphics for widescreen resolutions.\nCauses graphical glitches is some games.\n\nIf unsure, leave this unchecked.");
 static wxString vsync_desc = _("Wait for vertical blanks in order to reduce tearing.\nDecreases performance if emulation speed is below 100%.\n\nIf unsure, leave this unchecked.");
+static wxString bfi_desc = _("Inserts a black frame between every game frame.\nIf you're on a 120 hz monitor, this will improve motion blur.\nOnly works with vertical sync or an external frame limiter enabled.\n\nIf unsure, leave this unchecked.");
 static wxString af_desc = _("Enable anisotropic filtering.\nEnhances visual quality of textures that are at oblique viewing angles.\nMight cause issues in a small number of games.\n\nIf unsure, select 1x.");
 static wxString aa_desc = _("Reduces the amount of aliasing caused by rasterizing 3D graphics.\nThis makes the rendered picture look less blocky.\nHeavily decreases emulation speed and sometimes causes issues.\n\nIf unsure, select None.");
 static wxString scaled_efb_copy_desc = _("Greatly increases quality of textures generated using render to texture effects.\nRaising the internal resolution will improve the effect of this setting.\nSlightly decreases performance and possibly causes issues (although unlikely).\n\nIf unsure, leave this checked.");
@@ -385,6 +386,7 @@ VideoConfigDiag::VideoConfigDiag(wxWindow* parent, const std::string &title)
 				{
 					szr_display->Add(CreateCheckBox(page_general, _("V-Sync"), (vsync_desc), vconfig.bVSync));
 					szr_display->Add(CreateCheckBox(page_general, _("Use Fullscreen"), (use_fullscreen_desc), SConfig::GetInstance().bFullscreen));
+					szr_display->Add(CreateCheckBox(page_general, _("Black Frame Insertion"), (bfi_desc), vconfig.bBlackFrameInsertion));
 				}
 			}
 

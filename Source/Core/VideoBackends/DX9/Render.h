@@ -25,6 +25,8 @@ public:
 	void SetInterlacingMode();
 	void SetViewport();
 
+	void InsertBlackFrame() {};
+
 	void ApplyState(bool bUseDstAlpha);
 	void RestoreState();
 

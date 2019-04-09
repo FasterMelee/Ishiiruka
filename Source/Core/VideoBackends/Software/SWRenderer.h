@@ -19,6 +19,8 @@ public:
 	void Init() override;
 	void Shutdown() override;
 
+	void InsertBlackFrame() override{};
+
 	static u8* GetNextColorTexture();
 	static u8* GetCurrentColorTexture();
 	void SwapColorTexture();

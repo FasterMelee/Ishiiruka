@@ -595,6 +595,87 @@ void Renderer::SwapImpl(u32 xfb_addr, u32 fb_width, u32 fb_stride, u32 fb_height
 	TextureCache::GetInstance()->Cleanup(frameCount);
 }
 
+void Renderer::InsertBlackFrame() 
+{
+	StateTracker::GetInstance()->EndRenderPass();
+	StateTracker::GetInstance()->OnEndFrame();
+
+	g_command_buffer_mgr->PrepareToSubmitCommandBuffer();
+
+	// Draw to the screen if we have a swap chain.
+	if (m_swap_chain)
+	{
+		// Grab the next image from the swap chain in preparation for drawing the window.
+		VkResult res = m_swap_chain->AcquireNextImage(m_image_available_semaphore);
+		if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			// There's an issue here. We can't resize the swap chain while the GPU is still busy with it,
+			// but calling WaitForGPUIdle would create a deadlock as PrepareToSubmitCommandBuffer has been
+			// called by SwapImpl. WaitForGPUIdle waits on the semaphore, which PrepareToSubmitCommandBuffer
+			// has already done, so it blocks indefinitely. To work around this, we submit the current
+			// command buffer, resize the swap chain (which calls WaitForGPUIdle), and then finally call
+			// PrepareToSubmitCommandBuffer to return to the state that the caller expects.
+			g_command_buffer_mgr->SubmitCommandBuffer(false);
+			ResizeSwapChain();
+			g_command_buffer_mgr->PrepareToSubmitCommandBuffer();
+			res = m_swap_chain->AcquireNextImage(m_image_available_semaphore);
+		}
+		if (res != VK_SUCCESS)
+			PanicAlert("Failed to grab image from swap chain");
+
+		// Transition from undefined (or present src, but it can be substituted) to
+		// color attachment ready for writing. These transitions must occur outside
+		// a render pass, unless the render pass declares a self-dependency.
+		Texture2D* backbuffer = m_swap_chain->GetCurrentTexture();
+		backbuffer->OverrideImageLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+		backbuffer->TransitionToLayout(g_command_buffer_mgr->GetCurrentCommandBuffer(),
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		// Begin render pass for rendering to the swap chain.
+		VkClearValue clear_value = { { { 0.0f, 0.0f, 0.0f, 1.0f } } };
+		VkRenderPassBeginInfo info = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			nullptr,
+			m_swap_chain->GetRenderPass(),
+			m_swap_chain->GetCurrentFramebuffer(),
+			{ { 0, 0 },{ backbuffer->GetWidth(), backbuffer->GetHeight() } },
+			1,
+			&clear_value };
+
+		vkCmdBeginRenderPass(g_command_buffer_mgr->GetCurrentCommandBuffer(), &info,
+			VK_SUBPASS_CONTENTS_INLINE);
+
+		// Draw OSD
+		Util::SetViewportAndScissor(g_command_buffer_mgr->GetCurrentCommandBuffer(), 0, 0,
+			backbuffer->GetWidth(), backbuffer->GetHeight());
+		DrawDebugText();
+		OSD::DoCallbacks(OSD::CallbackType::OnFrame);
+		OSD::DrawMessages();
+
+		// End drawing to backbuffer
+		vkCmdEndRenderPass(g_command_buffer_mgr->GetCurrentCommandBuffer());
+
+		// Transition the backbuffer to PRESENT_SRC to ensure all commands drawing
+		// to it have finished before present.
+		backbuffer->TransitionToLayout(g_command_buffer_mgr->GetCurrentCommandBuffer(),
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+		// Submit the current command buffer, signaling rendering finished semaphore when it's done
+		// Because this final command buffer is rendering to the swap chain, we need to wait for
+		// the available semaphore to be signaled before executing the buffer. This final submission
+		// can happen off-thread in the background while we're preparing the next frame.
+		g_command_buffer_mgr->SubmitCommandBuffer(
+			true, m_image_available_semaphore, m_rendering_finished_semaphore,
+			m_swap_chain->GetSwapChain(), m_swap_chain->GetCurrentImageIndex());
+	}
+	else
+	{
+		// No swap chain, just execute command buffer.
+		g_command_buffer_mgr->SubmitCommandBuffer(true);
+	}
+
+	BeginFrame();
+}
+
 void Renderer::ResolveEFBForSwap(const TargetRectangle& scaled_rect)
 {
 	// While the source rect can be out-of-range when drawing, the resolve rectangle must be within

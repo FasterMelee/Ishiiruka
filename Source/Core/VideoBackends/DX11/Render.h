@@ -56,6 +56,8 @@ public:
 	void ReinterpretPixelData(unsigned int convtype) override;
 	bool CheckForResize();
 
+	void InsertBlackFrame() override;
+
 private:
 	// Draw either the EFB, or specified XFB sources to the currently-bound framebuffer.
 	void DrawFrame(const TargetRectangle& target_rc, const EFBRectangle& source_rc, u32 xfb_addr,

@@ -36,6 +36,8 @@ public:
 	BoundingBox* GetBoundingBox() const { return m_bounding_box.get(); }
 	bool Initialize();
 
+	void InsertBlackFrame() override;
+
 	void RenderText(const std::string& pstr, int left, int top, u32 color) override;
 	u32 AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data) override;
 	void PokeEFB(EFBAccessType type, const EfbPokeData* points, size_t num_points) override;
