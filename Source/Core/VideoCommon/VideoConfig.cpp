@@ -80,7 +80,8 @@ void VideoConfig::Load(const std::string& ini_file)
 	settings->Get("Crop", &bCrop, false);
 	settings->Get("UseXFB", &bUseXFB, 0);
 	settings->Get("UseRealXFB", &bUseRealXFB, 0);
-	settings->Get("BlackFrameInsertion", &bBlackFrameInsertion, 0);
+	settings->Get("BlackFrameInsertion", &iBlackFrameInsertion, BFI_OFF);
+	settings->Get("BlackFrameInsertionBIR", &iBlackFrameInsertionBIR, BFIR_30);
 	settings->Get("SafeTextureCacheColorSamples", &iSafeTextureCache_ColorSamples, 128);
 	settings->Get("ShowFPS", &bShowFPS, false);
 	settings->Get("ShowNetPlayPing", &bShowNetPlayPing, false);
@@ -430,7 +431,8 @@ void VideoConfig::Save(const std::string& ini_file)
 	settings->Set("wideScreenHack", bWidescreenHack);
 	settings->Set("UseXFB", bUseXFB);
 	settings->Set("UseRealXFB", bUseRealXFB);
-	settings->Set("BlackFrameInsertion", bBlackFrameInsertion);
+	settings->Set("BlackFrameInsertion", iBlackFrameInsertion);
+	settings->Set("BlackFrameInsertionBIR", iBlackFrameInsertionBIR);
 	settings->Set("SafeTextureCacheColorSamples", iSafeTextureCache_ColorSamples);
 	settings->Set("ShowFPS", bShowFPS);
 	settings->Set("ShowNetPlayPing", bShowNetPlayPing);

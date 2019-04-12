@@ -139,6 +139,7 @@ protected:
 	void PopulateStereoShaders();
 	void PopulateAAList();
 	void OnAAChanged(wxCommandEvent& ev);
+	void OnBFIRChanged(wxCommandEvent& ev);
 	wxChoice* choice_backend;
 	wxChoice* choice_adapter;
 	wxChoice* choice_display_resolution;
@@ -197,6 +198,9 @@ protected:
 	wxSlider* bump_threshold_slider;
 	wxSlider* bump_blend_slider;
 	wxSlider* bump_frequency_slider;
+
+	wxChoice* choice_bfi;
+	wxChoice* choice_bfir;
 
 	SettingCheckBox* validation_layer;
 	SettingCheckBox* backend_multithreading;
