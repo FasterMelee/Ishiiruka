@@ -47,7 +47,6 @@ static std::thread s_adapter_output_thread;
 static Common::Flag s_adapter_thread_running;
 
 static Common::Event s_rumble_data_available;
-static unsigned char s_latest_rumble_data[5];
 
 static std::mutex s_init_mutex;
 static std::thread s_adapter_detect_thread;
@@ -99,8 +98,11 @@ static void Write()
 	int size = 0;
 	while (s_adapter_thread_running.IsSet())
 	{
-		if (s_rumble_data_available.WaitFor(std::chrono::milliseconds(100)))
-			libusb_interrupt_transfer(s_handle, s_endpoint_out, s_latest_rumble_data, sizeof(s_latest_rumble_data), &size, 16);
+		if (s_rumble_data_available.WaitFor(std::chrono::milliseconds(100))) 
+		{
+			unsigned char rumble[5] = { 0x11, s_controller_rumble[0], s_controller_rumble[1], s_controller_rumble[2], s_controller_rumble[3] };
+			libusb_interrupt_transfer(s_handle, s_endpoint_out, rumble, sizeof(rumble), &size, 16);
+		}
 	}
 
 	s_rumble_data_available.Reset();
@@ -537,11 +539,6 @@ static void ResetRumbleLockNeeded()
 	}
 
 	std::fill(std::begin(s_controller_rumble), std::end(s_controller_rumble), 0);
-
-	s_latest_rumble_data[0] = 0x11;	
-	for (int i = 0; i < 4; i++)
-		s_latest_rumble_data[i + 1] = s_controller_rumble[i];
-		
 	s_rumble_data_available.Set();
 }
 
@@ -554,19 +551,8 @@ void Output(int chan, u8 rumble_command)
 	if (rumble_command != s_controller_rumble[chan] &&
 		s_controller_type[chan] != ControllerTypes::CONTROLLER_WIRELESS)
 	{
-		s_controller_rumble[chan] = rumble_command;
-
-		unsigned char rumble[5] = { 0x11, s_controller_rumble[0], s_controller_rumble[1],
-															 s_controller_rumble[2], s_controller_rumble[3] };
-		int size = 0;
-
-		libusb_interrupt_transfer(s_handle, s_endpoint_out, rumble, sizeof(rumble), &size, 16);
-		// Netplay sends invalid data which results in size = 0x00.  Ignore it.
-		if (size != 0x05 && size != 0x00)
-		{
-			ERROR_LOG(SERIALINTERFACE, "error writing rumble (size: %d)", size);
-			Reset();
-		}
+    	s_controller_rumble[chan] = rumble_command;
+    	s_rumble_data_available.Set();
 	}
 }
 
