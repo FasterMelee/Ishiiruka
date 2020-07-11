@@ -34,6 +34,7 @@ static libusb_device_handle* s_handle = nullptr;
 static u8 s_controller_type[MAX_SI_CHANNELS] = {
 		ControllerTypes::CONTROLLER_NONE, ControllerTypes::CONTROLLER_NONE,
 		ControllerTypes::CONTROLLER_NONE, ControllerTypes::CONTROLLER_NONE };
+static bool s_controller_calibrated[MAX_SI_CHANNELS] = { false, false, false, false };
 static u8 s_controller_rumble[4];
 
 static std::mutex s_mutex;
@@ -246,6 +247,7 @@ static void Setup()
 	for (int i = 0; i < MAX_SI_CHANNELS; i++)
 	{
 		s_controller_type[i] = ControllerTypes::CONTROLLER_NONE;
+		s_controller_calibrated[i] = false;
 		s_controller_rumble[i] = 0;
 	}
 
@@ -402,7 +404,10 @@ static void Reset()
 	}
 
 	for (int i = 0; i < MAX_SI_CHANNELS; i++)
+	{
 		s_controller_type[i] = ControllerTypes::CONTROLLER_NONE;
+		s_controller_calibrated[i] = false;
+	}
 
 	s_detected = false;
 
@@ -445,18 +450,6 @@ GCPadStatus Input(int chan)
 	}
 	else
 	{
-		bool get_origin = false;
-		u8 type = controller_payload_copy[1 + (9 * chan)] >> 4;
-		if (type != ControllerTypes::CONTROLLER_NONE &&
-			s_controller_type[chan] == ControllerTypes::CONTROLLER_NONE)
-		{
-			NOTICE_LOG(SERIALINTERFACE, "New device connected to Port %d of Type: %02x", chan + 1,
-				controller_payload_copy[1 + (9 * chan)]);
-			get_origin = true;
-		}
-
-		s_controller_type[chan] = type;
-
 		if (s_controller_type[chan] != ControllerTypes::CONTROLLER_NONE)
 		{
 			u8 b1 = controller_payload_copy[1 + (9 * chan) + 1];
@@ -489,8 +482,11 @@ GCPadStatus Input(int chan)
 			if (b2 & (1 << 3))
 				pad.button |= PAD_TRIGGER_L;
 
-			if (get_origin)
+			if (!s_controller_calibrated[chan])
+			{
 				pad.button |= PAD_GET_ORIGIN;
+				s_controller_calibrated[chan] = true;
+			}
 
 			pad.stickX = controller_payload_copy[1 + (9 * chan) + 3];
 			pad.stickY = controller_payload_copy[1 + (9 * chan) + 4];
@@ -511,6 +507,44 @@ GCPadStatus Input(int chan)
 	}
 
 	return pad;
+}
+
+void UpdateDevices()
+{
+	if (!UseAdapter())
+		return;
+
+	if (s_handle == nullptr || !s_detected)
+		return;
+
+	int payload_size = 0;
+	u8 controller_payload_copy[37];
+
+	{
+		std::lock_guard<std::mutex> lk(s_mutex);
+		std::copy(std::begin(s_controller_payload), std::end(s_controller_payload),
+			std::begin(controller_payload_copy));
+		payload_size = s_controller_payload_size.load();
+	}
+
+	if (payload_size == sizeof(controller_payload_copy) &&
+		controller_payload_copy[0] == LIBUSB_DT_HID)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			u8 type = controller_payload_copy[1 + (9 * i)] >> 4;
+
+			if (type != ControllerTypes::CONTROLLER_NONE &&
+				s_controller_type[i] == ControllerTypes::CONTROLLER_NONE)
+			{
+				NOTICE_LOG(SERIALINTERFACE, "New device connected to Port %d of Type: %02x", i + 1,
+					controller_payload_copy[1 + (9 * i)]);
+				s_controller_calibrated[i] = false;
+			}
+
+			s_controller_type[i] = type;
+		}
+	}
 }
 
 bool DeviceConnected(int chan)
